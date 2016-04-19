@@ -10,44 +10,32 @@ import (
 var s tcell.Screen
 var row = 0
 var col = 0
+var command = []rune{}
 
-func Println(str string) {
-	PrintRune(1, row, str)
-	row++
+func PrintRune(r rune) {
+	// TODO handle line wraps
+	width := runewidth.RuneWidth(r)
+	s.SetContent(col, row, r, nil, tcell.StyleDefault)
+	col += width
+	command = append(command, r)
 }
 
-func PrintRune(x, y int, str string) {
-	i := 0
-	var deferred []rune
-	dwidth := 0
-	for _, r := range str {
-		switch runewidth.RuneWidth(r) {
-		case 0:
-			if len(deferred) == 0 {
-				deferred = append(deferred, ' ')
-				dwidth = 1
-			}
-		case 1:
-			if len(deferred) != 0 {
-				s.SetContent(x+i, y, deferred[0], deferred[1:], tcell.StyleDefault)
-				i += dwidth
-			}
-			deferred = nil
-			dwidth = 1
-		case 2:
-			if len(deferred) != 0 {
-				s.SetContent(x+i, y, deferred[0], deferred[1:], tcell.StyleDefault)
-				i += dwidth
-			}
-			deferred = nil
-			dwidth = 2
-		}
-		deferred = append(deferred, r)
+func DeleteRune() {
+	// TODO handle deleting from line wraps
+	if col == 0 {
+		return
 	}
-	if len(deferred) != 0 {
-		s.SetContent(x+i, y, deferred[0], deferred[1:], tcell.StyleDefault)
-		i += dwidth
-	}
+
+	command = command[:len(command)-1]
+	col--
+	PrintRune(' ')
+	col--
+}
+
+func NewLine() {
+	row++
+	col = 0
+	command = nil
 }
 
 func main() {
@@ -72,10 +60,16 @@ func main() {
 					close(quit)
 					return
 				case tcell.KeyEnter:
-					Println("aoeu")
+					// TODO run the command
+					NewLine()
+					s.Sync()
+				// TODO implement backspace
+				case tcell.KeyDEL:
+					DeleteRune()
 					s.Sync()
 				default:
-					Println(string(ev.Rune()))
+					// TODO collect command input
+					PrintRune(ev.Rune())
 					s.Sync()
 				}
 			case *tcell.EventResize:
