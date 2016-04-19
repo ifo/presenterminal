@@ -12,6 +12,34 @@ var row = 0
 var col = 0
 var command = []rune{}
 
+func EventLoop(quit chan<- struct{}) {
+	for {
+		ev := s.PollEvent()
+		switch ev := ev.(type) {
+		case *tcell.EventKey:
+			switch ev.Key() {
+			case tcell.KeyEscape:
+				close(quit)
+				return
+			case tcell.KeyEnter:
+				// TODO run the command
+				NewLine()
+				s.Sync()
+			// TODO implement backspace
+			case tcell.KeyDEL:
+				DeleteRune()
+				s.Sync()
+			default:
+				// TODO collect command input
+				PrintRune(ev.Rune())
+				s.Sync()
+			}
+		case *tcell.EventResize:
+			s.Sync()
+		}
+	}
+}
+
 func PrintRune(r rune) {
 	// TODO handle line wraps
 	width := runewidth.RuneWidth(r)
@@ -50,33 +78,7 @@ func main() {
 	defer s.Fini()
 
 	quit := make(chan struct{})
-	go func() {
-		for {
-			ev := s.PollEvent()
-			switch ev := ev.(type) {
-			case *tcell.EventKey:
-				switch ev.Key() {
-				case tcell.KeyEscape:
-					close(quit)
-					return
-				case tcell.KeyEnter:
-					// TODO run the command
-					NewLine()
-					s.Sync()
-				// TODO implement backspace
-				case tcell.KeyDEL:
-					DeleteRune()
-					s.Sync()
-				default:
-					// TODO collect command input
-					PrintRune(ev.Rune())
-					s.Sync()
-				}
-			case *tcell.EventResize:
-				s.Sync()
-			}
-		}
-	}()
+	go EventLoop(quit)
 
 	<-quit
 }
