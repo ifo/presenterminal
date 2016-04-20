@@ -22,8 +22,15 @@ func EventLoop(quit chan<- struct{}) {
 				close(quit)
 				return
 			case tcell.KeyEnter:
-				// TODO run the command
+				output, err := RunCommand()
 				NewLine()
+				if err != nil {
+					PrintLine(err.Error())
+				}
+				if output != "" {
+					PrintLine(output)
+				}
+				CommandPrompt()
 				s.Sync()
 			// TODO implement backspace
 			case tcell.KeyDEL:
