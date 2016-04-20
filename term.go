@@ -30,7 +30,6 @@ func EventLoop(quit chan<- struct{}) {
 				DeleteRune()
 				s.Sync()
 			default:
-				// TODO collect command input
 				PrintRune(ev.Rune())
 				s.Sync()
 			}
@@ -38,6 +37,17 @@ func EventLoop(quit chan<- struct{}) {
 			s.Sync()
 		}
 	}
+}
+
+func PrintString(str string) {
+	for _, r := range str {
+		PrintRune(r)
+	}
+}
+
+func PrintLine(str string) {
+	PrintString(str)
+	NewLine()
 }
 
 func PrintRune(r rune) {
@@ -50,7 +60,7 @@ func PrintRune(r rune) {
 
 func DeleteRune() {
 	// TODO handle deleting from line wraps
-	if col == 0 {
+	if col <= 1 { // don't delete the starting "$ "
 		return
 	}
 
@@ -58,6 +68,11 @@ func DeleteRune() {
 	col--
 	PrintRune(' ')
 	col--
+}
+
+func CommandPrompt() {
+	PrintString("$ ")
+	command = nil
 }
 
 func NewLine() {
@@ -77,6 +92,8 @@ func main() {
 	}
 	defer s.Fini()
 
+	PrintString("$ ")
+	command = nil
 	quit := make(chan struct{})
 	go EventLoop(quit)
 
